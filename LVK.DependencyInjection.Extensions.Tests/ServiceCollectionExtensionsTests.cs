@@ -23,7 +23,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void BootstrapWithType_NullBootstrapperType_ThrowsArgumentNullException()
     {
-        ServiceCollection services = new ServiceCollection();
+        ServiceCollection services = new();
 
         ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() =>
             ServiceCollectionExtensions.Bootstrap(services, null));
@@ -34,7 +34,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void BootstrapWithType_WithValidBootstrapper_CallsBootstrapper()
     {
-        ServiceCollection services = new ServiceCollection();
+        ServiceCollection services = new();
         TestBootstrapper.BootstrapCallCount = 0;
 
         ServiceCollectionExtensions.Bootstrap(services, typeof(TestBootstrapper));
@@ -45,7 +45,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void BootstrapWithType_WithValidBootstrapperCalledTwice_CallsBootstrapperOnlyOnce()
     {
-        ServiceCollection services = new ServiceCollection();
+        ServiceCollection services = new();
         TestBootstrapper.BootstrapCallCount = 0;
 
         ServiceCollectionExtensions.Bootstrap(services, typeof(TestBootstrapper));
@@ -57,7 +57,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void BootstrapWithType_WithTypeThatDoesNotImplementInterface_ThrowsArgumentException()
     {
-        ServiceCollection services = new ServiceCollection();
+        ServiceCollection services = new();
         TestBootstrapper.BootstrapCallCount = 0;
 
         ArgumentException exception = Assert.Throws<ArgumentException>(() => ServiceCollectionExtensions.Bootstrap(services, typeof(InvalidServiceBootstrapper)));
@@ -77,7 +77,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void GenericBootstrap_WithValidBootstrapper_CallsBootstrapper()
     {
-        ServiceCollection services = new ServiceCollection();
+        ServiceCollection services = new();
         TestBootstrapper.BootstrapCallCount = 0;
 
         ServiceCollectionExtensions.Bootstrap<TestBootstrapper>(services);
@@ -88,7 +88,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void GenericBootstrap_WithValidBootstrapperCalledTwice_CallsBootstrapperOnlyOnce()
     {
-        ServiceCollection services = new ServiceCollection();
+        ServiceCollection services = new();
         TestBootstrapper.BootstrapCallCount = 0;
 
         ServiceCollectionExtensions.Bootstrap<TestBootstrapper>(services);
@@ -100,8 +100,8 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void Bootstrap_WithTwoServiceCollections_CallsBootstrapperTwice()
     {
-        ServiceCollection services1 = new ServiceCollection();
-        ServiceCollection services2 = new ServiceCollection();
+        ServiceCollection services1 = new();
+        ServiceCollection services2 = new();
 
         TestBootstrapper.BootstrapCallCount = 0;
         services1.Bootstrap<TestBootstrapper>();
@@ -113,8 +113,8 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void Bootstrap_WithTwoServiceCollectionsCalledRepeatedly_CallsBootstrapperOnlyTwice()
     {
-        ServiceCollection services1 = new ServiceCollection();
-        ServiceCollection services2 = new ServiceCollection();
+        ServiceCollection services1 = new();
+        ServiceCollection services2 = new();
 
         TestBootstrapper.BootstrapCallCount = 0;
         services1.Bootstrap<TestBootstrapper>();
@@ -128,8 +128,8 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void Bootstrap_WithTwoServiceCollectionsAndOtherServicesRegisteredFirst_CallsBootstrapperTwice()
     {
-        ServiceCollection services1 = new ServiceCollection();
-        ServiceCollection services2 = new ServiceCollection();
+        ServiceCollection services1 = new();
+        ServiceCollection services2 = new();
 
         services1.AddTransient<string>(provider => "Service");
         services2.AddTransient<string>(provider => "Service");
@@ -152,7 +152,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void AddFuncFactoryWhenResolved_ReturnsDelegateThatResolvesService()
     {
-        ServiceCollection services = new ServiceCollection();
+        ServiceCollection services = new();
 
         services.AddTransient<ITestService, TestService>();
         services.AddFuncFactory<ITestService>();
@@ -167,7 +167,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void AddFuncFactory_ResolvedAndCalledTwice_ResolvesToDifferentInstances()
     {
-        ServiceCollection services = new ServiceCollection();
+        ServiceCollection services = new();
 
         services.AddTransient<ITestService, TestService>();
         services.AddFuncFactory<ITestService>();
