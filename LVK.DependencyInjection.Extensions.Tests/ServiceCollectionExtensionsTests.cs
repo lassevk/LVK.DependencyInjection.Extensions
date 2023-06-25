@@ -1,7 +1,6 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
-using NUnit.Framework.Internal;
 
 // ReSharper disable InvokeAsExtensionMethod
 #pragma warning disable CS8600
@@ -24,7 +23,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void BootstrapWithType_NullBootstrapperType_ThrowsArgumentNullException()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new ServiceCollection();
 
         ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() =>
             ServiceCollectionExtensions.Bootstrap(services, null));
@@ -35,7 +34,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void BootstrapWithType_WithValidBootstrapper_CallsBootstrapper()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new ServiceCollection();
         TestBootstrapper.BootstrapCallCount = 0;
 
         ServiceCollectionExtensions.Bootstrap(services, typeof(TestBootstrapper));
@@ -46,7 +45,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void BootstrapWithType_WithValidBootstrapperCalledTwice_CallsBootstrapperOnlyOnce()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new ServiceCollection();
         TestBootstrapper.BootstrapCallCount = 0;
 
         ServiceCollectionExtensions.Bootstrap(services, typeof(TestBootstrapper));
@@ -58,7 +57,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void BootstrapWithType_WithTypeThatDoesNotImplementInterface_ThrowsArgumentException()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new ServiceCollection();
         TestBootstrapper.BootstrapCallCount = 0;
 
         ArgumentException exception = Assert.Throws<ArgumentException>(() => ServiceCollectionExtensions.Bootstrap(services, typeof(InvalidServiceBootstrapper)));
@@ -78,7 +77,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void GenericBootstrap_WithValidBootstrapper_CallsBootstrapper()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new ServiceCollection();
         TestBootstrapper.BootstrapCallCount = 0;
 
         ServiceCollectionExtensions.Bootstrap<TestBootstrapper>(services);
@@ -89,7 +88,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void GenericBootstrap_WithValidBootstrapperCalledTwice_CallsBootstrapperOnlyOnce()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new ServiceCollection();
         TestBootstrapper.BootstrapCallCount = 0;
 
         ServiceCollectionExtensions.Bootstrap<TestBootstrapper>(services);
@@ -101,21 +100,36 @@ public class ServiceCollectionExtensionsTests
     [Test]
     public void Bootstrap_WithTwoServiceCollections_CallsBootstrapperTwice()
     {
-        var services1 = new ServiceCollection();
-        var services2 = new ServiceCollection();
+        ServiceCollection services1 = new ServiceCollection();
+        ServiceCollection services2 = new ServiceCollection();
 
         TestBootstrapper.BootstrapCallCount = 0;
         services1.Bootstrap<TestBootstrapper>();
-        services1.Bootstrap<TestBootstrapper>();
+        services2.Bootstrap<TestBootstrapper>();
 
-        Assert.That(TestBootstrapper.BootstrapCallCount, Is.EqualTo(1));
+        Assert.That(TestBootstrapper.BootstrapCallCount, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Bootstrap_WithTwoServiceCollectionsCalledRepeatedly_CallsBootstrapperOnlyTwice()
+    {
+        ServiceCollection services1 = new ServiceCollection();
+        ServiceCollection services2 = new ServiceCollection();
+
+        TestBootstrapper.BootstrapCallCount = 0;
+        services1.Bootstrap<TestBootstrapper>();
+        services2.Bootstrap<TestBootstrapper>();
+        services1.Bootstrap<TestBootstrapper>();
+        services2.Bootstrap<TestBootstrapper>();
+
+        Assert.That(TestBootstrapper.BootstrapCallCount, Is.EqualTo(2));
     }
 
     [Test]
     public void Bootstrap_WithTwoServiceCollectionsAndOtherServicesRegisteredFirst_CallsBootstrapperTwice()
     {
-        var services1 = new ServiceCollection();
-        var services2 = new ServiceCollection();
+        ServiceCollection services1 = new ServiceCollection();
+        ServiceCollection services2 = new ServiceCollection();
 
         services1.AddTransient<string>(provider => "Service");
         services2.AddTransient<string>(provider => "Service");
@@ -125,5 +139,45 @@ public class ServiceCollectionExtensionsTests
         services1.Bootstrap<TestBootstrapper>();
 
         Assert.That(TestBootstrapper.BootstrapCallCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void AddFuncFactory_NullServices_ThrowsArgumentNullException()
+    {
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => ServiceCollectionExtensions.AddFuncFactory<ITestService>(null));
+
+        Assert.That(exception.ParamName, Is.EqualTo("services"));
+    }
+
+    [Test]
+    public void AddFuncFactoryWhenResolved_ReturnsDelegateThatResolvesService()
+    {
+        ServiceCollection services = new ServiceCollection();
+
+        services.AddTransient<ITestService, TestService>();
+        services.AddFuncFactory<ITestService>();
+        ServiceProvider provider = services.BuildServiceProvider();
+
+        Func<ITestService>? factory = provider.GetService<Func<ITestService>>();
+
+        Assert.That(factory, Is.Not.Null);
+        Assert.That(factory(), Is.InstanceOf<TestService>());
+    }
+
+    [Test]
+    public void AddFuncFactory_ResolvedAndCalledTwice_ResolvesToDifferentInstances()
+    {
+        ServiceCollection services = new ServiceCollection();
+
+        services.AddTransient<ITestService, TestService>();
+        services.AddFuncFactory<ITestService>();
+        ServiceProvider provider = services.BuildServiceProvider();
+
+        Func<ITestService>? factory = provider.GetService<Func<ITestService>>();
+
+        Assert.That(factory, Is.Not.Null);
+        ITestService instance1 = factory();
+        ITestService instance2 = factory();
+        Assert.That(instance1, Is.Not.SameAs(instance2));
     }
 }

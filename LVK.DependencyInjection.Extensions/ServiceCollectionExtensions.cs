@@ -7,6 +7,17 @@ public static class ServiceCollectionExtensions
     private static IServiceCollection? _PreviousServiceCollection;
     private static BootstrapperCollection? _PreviousBootstrapperCollection;
 
+    public static IServiceCollection AddFuncFactory<T>(this IServiceCollection services)
+        where T : class
+    {
+        _ = services ?? throw new ArgumentNullException(nameof(services));
+
+        services.AddSingleton<Func<T>>(provider => () => provider.GetService<T>() ??
+            throw new InvalidOperationException($"Unable to resolve service of type {typeof(T).FullName}"));
+
+        return services;
+    }
+
     public static IServiceCollection Bootstrap(this IServiceCollection services, Type servicesBootstrapper)
     {
         _ = services ?? throw new ArgumentNullException(nameof(services));
@@ -45,9 +56,15 @@ public static class ServiceCollectionExtensions
         _PreviousServiceCollection = services;
         Type type = typeof(BootstrapperCollection);
         _PreviousBootstrapperCollection =
-            services.FirstOrDefault(descriptor => descriptor.Lifetime == ServiceLifetime.Singleton && descriptor.ServiceType == type)
-              ?.ImplementationInstance as BootstrapperCollection
-         ?? new BootstrapperCollection();
+            services.FirstOrDefault(descriptor =>
+                    descriptor.Lifetime == ServiceLifetime.Singleton && descriptor.ServiceType == type)
+                ?.ImplementationInstance as BootstrapperCollection;
+
+        if (_PreviousBootstrapperCollection is null)
+        {
+            _PreviousBootstrapperCollection = new();
+            services.AddSingleton<BootstrapperCollection>(_PreviousBootstrapperCollection);
+        }
 
         return _PreviousBootstrapperCollection;
     }
